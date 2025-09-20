@@ -3,7 +3,7 @@ package easyhost
 import (
 	"fmt"
 	"github.com/pkg/sftp"
-	"kaka/cmd/cmd/config"
+	"kaka/config"
 )
 
 // TransferFile 文件传输或写入文件

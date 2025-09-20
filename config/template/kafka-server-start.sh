@@ -1,5 +1,5 @@
 #!/bin/bash
-
+export JAVA_HOME={{.JavaHome}}
 if [ $# -lt 1 ]; then
   echo "USAGE: $0 [-daemon] server.properties [--override property=value]*"
   exit 1
@@ -14,7 +14,7 @@ fi
 
 # 堆大小
 if [ "x$KAFKA_HEAP_OPTS" = "x" ]; then
-  export KAFKA_HEAP_OPTS="-Xmx{{.MaxHeapSize}}G -Xms{{.MinHeapSize}}G"
+  export KAFKA_HEAP_OPTS="-Xmx{{.MaxHeapSize}} -Xms{{.MinHeapSize}}"
 fi
 
 

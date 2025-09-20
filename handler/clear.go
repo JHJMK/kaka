@@ -2,8 +2,8 @@ package handler
 
 import (
 	"fmt"
-	"kaka/cmd/cmd/config"
-	"kaka/cmd/cmd/easyhost"
+	"kaka/config"
+	"kaka/easyhost"
 )
 
 func Clear(c config.Config) error {

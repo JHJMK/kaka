@@ -1,7 +1,7 @@
 package main
 
 import (
-	"kaka/cmd/cmd/cmd"
+	"kaka/cmd"
 )
 
 func main() {

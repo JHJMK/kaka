@@ -3,7 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"kaka/cmd/cmd/config"
+	"kaka/config"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -69,7 +69,7 @@ var initCmd = &cobra.Command{
 					},
 				}
 				c.InstallPath = "/opt/kaka"
-				c.KafkaLogDir = "/data/kaka-logs"
+				c.DataDir = "/data/kaka-logs"
 				bytes, err := json.MarshalIndent(&c, "", "  ")
 				if err != nil {
 					fmt.Println("init config.json error:", err)

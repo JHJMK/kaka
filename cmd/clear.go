@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
-	"kaka/cmd/cmd/config"
-	"kaka/cmd/cmd/handler"
+	"kaka/config"
+	"kaka/handler"
 	"os"
 )
 

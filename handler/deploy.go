@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/pkg/errors"
-	"kaka/cmd/cmd/config"
-	"kaka/cmd/cmd/easyhost"
+	"kaka/config"
+	"kaka/easyhost"
 	"strconv"
 	"strings"
 	"text/template"
@@ -13,20 +13,31 @@ import (
 
 // CreateDir 创建目录
 func CreateDir(c config.Config) error {
-	fmt.Println("start check dir ...")
 	for _, host := range c.ManageHost {
+		fmt.Println("start check dir :", host.IP)
 		err := func() error {
 			client, err := easyhost.NewSSHClient(host.User, host.Password, host.IP, host.Port)
 			if err != nil {
 				return err
 			}
 			defer client.Close()
-			cmd := "mkdir -p " + c.InstallPath
+			// 安装目录是否已经存在
+			cmd := "test -d " + c.InstallPath
+			err = easyhost.ExecuteCmd(client, cmd)
+			if err == nil {
+				return errors.New("dir already exists")
+			}
+			cmd = "mkdir -p " + c.InstallPath
 			err = easyhost.ExecuteCmd(client, cmd)
 			if err != nil {
 				return err
 			}
-			cmd = "mkdir -p " + c.KafkaLogDir
+			cmd = "mkdir -p " + c.DataDir + "/kafka-logs"
+			err = easyhost.ExecuteCmd(client, cmd)
+			if err != nil {
+				return err
+			}
+			cmd = "mkdir -p " + c.DataDir + "/zookeeper"
 			err = easyhost.ExecuteCmd(client, cmd)
 			if err != nil {
 				return err
@@ -62,6 +73,16 @@ func CopyFile(c config.Config) error {
 		if err != nil {
 			return err
 		}
+		// 复制jdk
+		binary, err = GetInstallationPackageBytes(config.JdkFullFileName)
+		if err != nil {
+			return err
+		}
+		err = easyhost.TransferFile(binary, "/tmp/"+config.JdkFullFileName, host)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -86,6 +107,11 @@ func DecompressionAndRename(c config.Config) error {
 			res, err = easyhost.ExecuteCmdWithResponse(client, zkCmd)
 			if err != nil {
 				return errors.Wrap(err, zkCmd+" execute error,return message: "+res)
+			}
+			jdkCmd := "cd " + c.InstallPath + " && tar -zxf /tmp/" + config.JdkFullFileName + " && mv " + config.JdkFileName + " jdk"
+			res, err = easyhost.ExecuteCmdWithResponse(client, jdkCmd)
+			if err != nil {
+				return errors.Wrap(err, jdkCmd+" execute error,return message: "+res)
 			}
 			return nil
 		}()
@@ -119,12 +145,13 @@ func ConfigKafka(c config.Config) error {
 				return err
 			}
 			var buf bytes.Buffer
-			nodeInfo := make(map[string]string)
+			nodeInfo := make(map[int]string)
 			for j, h := range c.ManageHost {
-				nodeInfo[string(rune(j+1))] = h.IP // 使用 IP 地址，server.1=IP:2888:3888
+				nodeInfo[j] = h.IP // 使用 IP 地址，server.1=IP:2888:3888
 			}
 			err = tpl.Execute(&buf, map[string]interface{}{
 				"NodeInfo": nodeInfo,
+				"DataDir":  c.DataDir + "/zookeeper",
 			})
 			if err != nil {
 				return err
@@ -137,6 +164,8 @@ func ConfigKafka(c config.Config) error {
 			if err != nil {
 				return err
 			}
+			buf.Reset() // 清空
+
 			//2.配置启动脚本
 			file, err = config.Template.ReadFile("template/kafka-server-start.sh")
 			if err != nil {
@@ -149,6 +178,7 @@ func ConfigKafka(c config.Config) error {
 			err = tpl.Execute(&buf, map[string]interface{}{
 				"MaxHeapSize": "1G",
 				"MinHeapSize": "1G",
+				"JavaHome":    c.InstallPath + "/jdk",
 			})
 			if err != nil {
 				return err
@@ -157,6 +187,8 @@ func ConfigKafka(c config.Config) error {
 			if err != nil {
 				return err
 			}
+			buf.Reset() // 清空
+
 			//3.配置kafka/config/server.properties
 			file, err = config.Template.ReadFile("template/2.6.1.properties")
 			if err != nil {
@@ -189,7 +221,7 @@ func ConfigKafka(c config.Config) error {
 			}
 			err = tpl.Execute(&buf, map[string]interface{}{
 				"ZookeeperConnect": zookeeperConnect,
-				"LogDir":           c.KafkaLogDir,
+				"LogDir":           c.DataDir + "/kafka-logs",
 				"BrokerId":         i,
 				"NodeIp":           host.IP,
 				"Params":           params,

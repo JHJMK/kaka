@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"kaka/cmd/cmd/config"
-	"kaka/cmd/cmd/handler"
+	"kaka/config"
+	"kaka/handler"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -29,7 +29,11 @@ var deployCmd = &cobra.Command{
 		}
 		fmt.Println("read config ...")
 		// 各个节点创建目录
-		handler.CreateDir(c)
+		err = handler.CreateDir(c)
+		if err != nil {
+			fmt.Println("check dir error:", err)
+			os.Exit(1)
+		}
 		// 复制安装包
 		err = handler.CopyFile(c)
 		if err != nil {

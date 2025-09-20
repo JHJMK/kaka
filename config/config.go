@@ -8,11 +8,12 @@ import (
 
 // Kafka 版本常量
 const (
-	KafkaVersion          = "2.6.1"
 	KafkaFullFileName     = "kafka_2.12-2.6.1.tgz"
 	KafkaFileName         = "kafka_2.12-2.6.1"
 	ZookeeperFullFileName = "apache-zookeeper-3.5.8-bin.tar.gz"
 	ZookeeperFileName     = "apache-zookeeper-3.5.8-bin"
+	JdkFullFileName       = "openjdk-8u44-linux-x64.tar.gz"
+	JdkFileName           = "java-se-8u44-ri"
 )
 
 var StaticFile = map[string]string{
@@ -33,7 +34,7 @@ type Host struct {
 type Config struct {
 	ManageHost  []Host `json:"ManageHost"`
 	InstallPath string `json:"InstallPath"`
-	KafkaLogDir string `json:"KafkaLogDir"`
+	DataDir     string `json:"DataDir"`
 }
 
 // GetExecuteDir 获取当前执行目录,结尾不带 /
